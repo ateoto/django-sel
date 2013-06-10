@@ -7,8 +7,8 @@ from model_utils.managers import InheritanceManager
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=100)
-    slug_name = models.SlugField()
-    tags = TaggableManager()
+    slug_name = models.SlugField(editable=False)
+    tags = TaggableManager(blank=True)
 
     class Meta:
         app_label = 'sel'
@@ -25,12 +25,32 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
     name = models.CharField(max_length=100)
+    slug_name = models.SlugField(editable=False)
+    tags = TaggableManager(blank=True)
 
     class Meta:
         app_label = 'sel'
 
     def __unicode__(self):
         return "%s" % (self.name)
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.slug_name = slugify(self.name)
+
+        super(Recipe, self).save(*args, **kwargs)
+
+
+class MethodLine(models.Model):
+    recipe = models.ForeignKey(Recipe, related_name='method')
+    order = models.IntegerField(default=0)
+    text = models.TextField()
+
+    class Meta:
+        app_label = 'sel'
+
+    def __unicode__(self):
+        return "Step %i for %s" % (self.order, self.recipe.name)
 
 
 class IngredientLine(models.Model):
